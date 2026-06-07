@@ -142,12 +142,11 @@ main() {
   fi
   ok "対象フォルダ確認: $SRC_DIR"
 
-  # PDF件数と容量
-  log "PDF件数と容量を確認中..."
-  local total_count total_size
+  # PDF件数
+  log "PDF件数を確認中..."
+  local total_count
   total_count=$(find "$SRC_DIR" -type f -iname "*.pdf" | wc -l | tr -d ' ')
-  total_size=$(find "$SRC_DIR" -type f -iname "*.pdf" -print0 | xargs -0 du -sk 2>/dev/null | awk '{sum+=$1} END {printf "%.1fGB", sum/1024/1024}')
-  log "PDF件数: ${total_count}件 / 総容量: ${total_size}"
+  log "PDF件数: ${total_count}件"
   echo ""
 
   # 依存チェック
