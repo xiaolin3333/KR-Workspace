@@ -146,7 +146,7 @@ main() {
   log "PDF件数と容量を確認中..."
   local total_count total_size
   total_count=$(find "$SRC_DIR" -type f -iname "*.pdf" | wc -l | tr -d ' ')
-  total_size=$(find "$SRC_DIR" -type f -iname "*.pdf" -exec du -ch {} + 2>/dev/null | tail -1 | awk '{print $1}')
+  total_size=$(find "$SRC_DIR" -type f -iname "*.pdf" -print0 | xargs -0 du -sk 2>/dev/null | awk '{sum+=$1} END {printf "%.1fGB", sum/1024/1024}')
   log "PDF件数: ${total_count}件 / 総容量: ${total_size}"
   echo ""
 
