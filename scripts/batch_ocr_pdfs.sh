@@ -119,10 +119,10 @@ main() {
   fi
   echo ""
 
-  local count=0 skipped=0 processed=0 failed=0
+  local count=0 skipped=0 processed=0 failed=0 attempted=0
 
   while IFS= read -r -d '' src_pdf; do
-    if [[ "$LIMIT" -gt 0 && "$processed" -ge "$LIMIT" ]]; then
+    if [[ "$LIMIT" -gt 0 && "$attempted" -ge "$LIMIT" ]]; then
       log "--limit ${LIMIT} に達しました。"
       break
     fi
@@ -144,7 +144,9 @@ main() {
     if $DRY_RUN; then
       dryrun "[OCR予定] ${rel_path}"
       processed=$((processed + 1))
+      attempted=$((attempted + 1))
     else
+      attempted=$((attempted + 1))
       log "[OCR開始] ${rel_path}"
       local tmp_pdf; tmp_pdf="${src_pdf%.pdf}_ocr_tmp.pdf"
 
@@ -161,7 +163,7 @@ main() {
       fi
     fi
 
-  done < <(find "$SRC_DIR" -type f -iname "*.pdf" -print0 | sort -z)
+  done < <(find "$SRC_DIR" -type f -iname "*.pdf" ! -name "._*" -print0 | sort -z)
 
   echo ""
   echo "=========================================="
