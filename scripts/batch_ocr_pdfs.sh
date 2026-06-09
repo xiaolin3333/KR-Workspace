@@ -3,7 +3,7 @@
 # 外付けSSD内PDFを一括OCR処理するスクリプト
 # 元ファイルは絶対に上書きしない / dry-runデフォルト / --run で実行
 
-set -euo pipefail
+set -uo pipefail
 
 # ===== 設定 =====
 SRC_DIR="/Volumes/Samsung8TB金/●文献類PDF"
@@ -175,9 +175,9 @@ main() {
   # PDF件数・容量調査
   log "PDFを検索中..."
   local total_count total_size
-  total_count=$(find "$SRC_DIR" -type f -iname "*.pdf" | wc -l | tr -d ' ')
-  total_size=$(find "$SRC_DIR" -type f -iname "*.pdf" -exec du -ch {} + 2>/dev/null | tail -1 | awk '{print $1}')
-  log "発見したPDF: ${total_count}件 / 合計サイズ: ${total_size}"
+  total_count=$(find "$SRC_DIR" -type f -iname "*.pdf" 2>/dev/null | wc -l | tr -d ' ') || total_count=0
+  total_size=$(du -sh "$SRC_DIR" 2>/dev/null | awk '{print $1}') || total_size="不明"
+  log "発見したPDF: ${total_count}件 / ソースフォルダ合計サイズ: ${total_size}"
   echo ""
 
   # ログディレクトリ作成（dry-runでも作成して一覧表示）
