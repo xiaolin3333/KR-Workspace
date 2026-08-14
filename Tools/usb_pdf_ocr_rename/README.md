@@ -18,16 +18,36 @@ USBメモリに入っているPDF（スキャン画像PDFなど）を自動でOC
 1. OCR本体（Tesseract）を導入
    - macOS: `brew install tesseract tesseract-lang ghostscript`
    - Debian/Ubuntu: `sudo apt install tesseract-ocr tesseract-ocr-jpn ghostscript`
+   - Windows:
+     1. [Tesseract公式インストーラ](https://github.com/UB-Mannheim/tesseract/wiki)を導入し、
+        インストール時に日本語データ（`jpn`）も選択する
+     2. Tesseractのインストール先（例: `C:\Program Files\Tesseract-OCR`）を
+        環境変数 `PATH` に追加する
+     3. `ocrmypdf` はGhostscriptとQPDFにも依存するため、
+        [Ghostscript](https://ghostscript.com/releases/gsdnld.html) と
+        [QPDF](https://github.com/qpdf/qpdf/releases) もインストールし、
+        それぞれのインストール先を `PATH` に追加する
 2. Pythonパッケージを導入
    ```bash
    pip install -r requirements.txt
    ```
 3. 設定ファイルを作成
-   ```bash
-   cp config.example.json config.json
-   ```
+   - macOS/Linux: `cp config.example.json config.json`
+   - Windows（USBがドライブレターとして割り当てられる場合）:
+     `copy config.windows.example.json config.json`
+
    `config.json` を編集し、`watch_paths`（USBがマウントされる場所）や
    `dest_dir`（OCR後のPDFを保存する場所）を環境に合わせて変更してください。
+
+   例えばUSBが `P:\` として認識される場合は次のように指定します
+   （ドライブレター自体を1つのボリュームとして扱うため、`/Volumes` のような
+   「複数ボリュームの親フォルダ」を指定する必要はありません）:
+   ```json
+   {
+     "watch_paths": ["P:\\"],
+     "dest_dir": "C:\\Users\\<ユーザー名>\\Documents\\USB_PDF_OCR"
+   }
+   ```
 
 ## 使い方
 
@@ -76,6 +96,26 @@ USBを挿すたびに実行したい場合はudevルール、定期的に確認�
 ```
 */5 * * * * /usr/bin/python3 /path/to/usb_pdf_ocr_rename.py --config /path/to/config.json >> /tmp/usb_pdf_ocr_rename.log 2>&1
 ```
+
+### Windows（タスクスケジューラ）
+
+`run_watch_windows.ps1.example` を参考に、`--watch` モードを起動する
+PowerShellスクリプトを用意し、タスクスケジューラに登録します。
+
+1. `run_watch_windows.ps1.example` を `run_watch_windows.ps1` としてコピーし、
+   `$python` / `$script` / `$config` のパスを環境に合わせて編集
+2. PowerShellから一度手動実行して動作確認:
+   ```powershell
+   .\run_watch_windows.ps1
+   ```
+3. タスクスケジューラに登録（コマンドプロンプトまたはPowerShellから、
+   ログオン時に常駐監視を自動起動する例）:
+   ```powershell
+   schtasks /Create /TN "USB PDF OCR Rename" /TR "powershell.exe -WindowStyle Hidden -File \"C:\path\to\run_watch_windows.ps1\"" /SC ONLOGON /RL LIMITED
+   ```
+   USB挿入のたびに手動実行したいだけであれば `--watch` を使わず、
+   `schtasks` の `/SC` を `ONIDLE` や定期実行（例: `/SC MINUTE /MO 5`）に
+   変更して単発実行（`--watch` なし）を繰り返す運用でも構いません。
 
 ## 設定項目 (`config.json`)
 

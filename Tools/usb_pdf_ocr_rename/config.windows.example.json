@@ -1,0 +1,11 @@
+{
+  "watch_paths": ["P:\\"],
+  "volume_name_pattern": null,
+  "source_subdir": ".",
+  "dest_dir": "C:\\Users\\<ユーザー名>\\Documents\\USB_PDF_OCR",
+  "ocr_language": "jpn+eng",
+  "state_file": "~/.usb_pdf_ocr_rename_state.json",
+  "poll_interval_seconds": 30,
+  "filename_template": "{date}_{title}.pdf",
+  "title_max_length": 40
+}

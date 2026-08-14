@@ -20,7 +20,9 @@ from pathlib import Path
 from typing import Optional
 
 DEFAULT_CONFIG = {
-    # USBが自動マウントされる場所の候補（OSにより異なるので複数指定可）
+    # USBが自動マウントされる場所の候補（OSにより異なるので複数指定可）。
+    # macOS/Linux: "/Volumes" 等の「複数ボリュームの親フォルダ」を指定。
+    # Windows: "P:\\" のようにドライブレターそのものを指定（ボリューム自体として扱われる）。
     "watch_paths": ["/Volumes", "/media", "/mnt"],
     # ボリューム名を絞り込みたい場合の正規表現（Noneなら全ボリュームを対象）
     "volume_name_pattern": None,
@@ -104,6 +106,19 @@ def discover_source_dirs(cfg: Config, explicit_source: Optional[Path]) -> list[P
         root_path = Path(root).expanduser()
         if not root_path.is_dir():
             continue
+
+        # ドライブレター (Windowsの "P:\\" 等) やファイルシステムのルートは、
+        # それ自体が1つのUSBボリュームなので、直接対象に追加する。
+        # macOSの "/Volumes" のような「複数ボリュームの親フォルダ」とは
+        # root_path.parent == root_path (=自分自身がルート) かどうかで区別する。
+        if root_path.parent == root_path:
+            if volume_re and not volume_re.search(root_path.name or str(root_path)):
+                continue
+            source = root_path if cfg.source_subdir in (".", "") else root_path / cfg.source_subdir
+            if source.is_dir():
+                dirs.append(source)
+            continue
+
         for entry in sorted(root_path.iterdir()):
             if not entry.is_dir():
                 continue

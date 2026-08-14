@@ -1,0 +1,12 @@
+# USB PDF OCR & Rename を Windows で常駐監視するためのラッパー例。
+#
+# 使い方:
+#   1. このファイルを run_watch_windows.ps1 としてコピーし、パスを環境に合わせて編集
+#   2. 単独で試すなら PowerShell から:  .\run_watch_windows.ps1
+#   3. タスクスケジューラに登録する場合は README.md の手順を参照
+
+$python = "python"
+$script = "C:\path\to\KR-Workspace\Tools\usb_pdf_ocr_rename\usb_pdf_ocr_rename.py"
+$config = "C:\path\to\KR-Workspace\Tools\usb_pdf_ocr_rename\config.json"
+
+& $python $script --config $config --watch
