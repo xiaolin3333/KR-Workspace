@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+  "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  macOSでログイン時からバックグラウンド常駐させるためのlaunchd設定例。
+
+  使い方:
+    1. このファイルを ~/Library/LaunchAgents/com.krworkspace.usbpdfocr.plist にコピー
+    2. パスを環境に合わせて書き換える（python3, スクリプト, configのフルパス）
+    3. launchctl load ~/Library/LaunchAgents/com.krworkspace.usbpdfocr.plist
+-->
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.krworkspace.usbpdfocr</string>
+    <key>ProgramArguments</key>
+    <array>
+        <string>/usr/bin/env</string>
+        <string>python3</string>
+        <string>/absolute/path/to/KR-Workspace/Tools/usb_pdf_ocr_rename/usb_pdf_ocr_rename.py</string>
+        <string>--config</string>
+        <string>/absolute/path/to/KR-Workspace/Tools/usb_pdf_ocr_rename/config.json</string>
+        <string>--watch</string>
+    </array>
+    <key>RunAtLoad</key>
+    <true/>
+    <key>KeepAlive</key>
+    <true/>
+    <key>StandardOutPath</key>
+    <string>/tmp/usb_pdf_ocr_rename.log</string>
+    <key>StandardErrorPath</key>
+    <string>/tmp/usb_pdf_ocr_rename.err</string>
+</dict>
+</plist>
