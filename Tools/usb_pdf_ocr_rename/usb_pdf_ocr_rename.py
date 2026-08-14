@@ -46,6 +46,11 @@ DEFAULT_CONFIG = {
     # 既定値はスキャナーが自動生成する日時形式のファイル名
     # （例: 20260814082611）を想定した「数字だけ」のパターン。
     "generic_name_pattern": r"^\d{6,}$",
+    # 処理済みファイルのファイル名先頭に付ける目印。
+    # dest_dir を元のUSBフォルダと同じ場所にする運用（その場保存）でも、
+    # 未処理ファイルと見分けられるようにするためのもの。
+    # このマーカーで始まるファイルは次回以降スキャン対象から除外される。
+    "processed_marker": "◯",
 }
 
 DATE_PATTERNS = [
@@ -70,6 +75,7 @@ class Config:
     filename_template: str = DEFAULT_CONFIG["filename_template"]
     title_max_length: int = DEFAULT_CONFIG["title_max_length"]
     generic_name_pattern: str = DEFAULT_CONFIG["generic_name_pattern"]
+    processed_marker: str = DEFAULT_CONFIG["processed_marker"]
 
     @classmethod
     def load(cls, path: Optional[Path]) -> "Config":
@@ -137,7 +143,7 @@ def discover_source_dirs(cfg: Config, explicit_source: Optional[Path]) -> list[P
     return dirs
 
 
-def find_pdfs(source_dir: Path) -> list[Path]:
+def find_pdfs(source_dir: Path, processed_marker: str) -> list[Path]:
     return sorted(
         p
         for p in source_dir.rglob("*")
@@ -146,6 +152,9 @@ def find_pdfs(source_dir: Path) -> list[Path]:
         # "._foo.pdf" はmacOSが外部ドライブ(exFAT/NTFS等)にコピーした際に
         # 作るAppleDouble形式のリソースフォーク管理ファイルで、実データではない
         and not p.name.startswith("._")
+        # 処理済みマーカー付きのファイルは、保存先が元フォルダと同じ場合に
+        # 再スキャンで拾われてしまうのを防ぐため対象外にする
+        and not (processed_marker and p.name.startswith(processed_marker))
     )
 
 
@@ -243,6 +252,7 @@ def process_pdf(cfg: Config, pdf_path: Path, dest_dir: Path, dry_run: bool) -> O
         else:
             # 既に意味のある名前が付いているファイルは、OCRだけ適用してファイル名は維持する
             new_filename = pdf_path.name
+        new_filename = f"{cfg.processed_marker}{new_filename}"
         dest_path = unique_destination(dest_dir, new_filename)
 
         if dry_run:
@@ -271,7 +281,7 @@ def run_once(cfg: Config, explicit_source: Optional[Path], dry_run: bool) -> int
     processed_count = 0
     for source_dir in source_dirs:
         logger.info("スキャン中: %s", source_dir)
-        for pdf_path in find_pdfs(source_dir):
+        for pdf_path in find_pdfs(source_dir, cfg.processed_marker):
             file_hash = sha256_of_file(pdf_path)
             if file_hash in state["processed"]:
                 continue
