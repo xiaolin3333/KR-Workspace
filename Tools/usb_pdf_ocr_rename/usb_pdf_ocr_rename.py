@@ -40,6 +40,12 @@ DEFAULT_CONFIG = {
     "filename_template": "{date}_{title}.pdf",
     # タイトル抽出時の最大文字数
     "title_max_length": 40,
+    # 元のファイル名(拡張子除く)がこのパターンに完全一致する場合のみ、
+    # OCR内容に基づくリネームを行う。それ以外（既に人間が付けた名前など）は
+    # OCR処理だけ行い、ファイル名はそのまま維持する。
+    # 既定値はスキャナーが自動生成する日時形式のファイル名
+    # （例: 20260814082611）を想定した「数字だけ」のパターン。
+    "generic_name_pattern": r"^\d{6,}$",
 }
 
 DATE_PATTERNS = [
@@ -63,6 +69,7 @@ class Config:
     poll_interval_seconds: int = DEFAULT_CONFIG["poll_interval_seconds"]
     filename_template: str = DEFAULT_CONFIG["filename_template"]
     title_max_length: int = DEFAULT_CONFIG["title_max_length"]
+    generic_name_pattern: str = DEFAULT_CONFIG["generic_name_pattern"]
 
     @classmethod
     def load(cls, path: Optional[Path]) -> "Config":
@@ -221,16 +228,21 @@ def unique_destination(dest_dir: Path, filename: str) -> Path:
 
 
 def process_pdf(cfg: Config, pdf_path: Path, dest_dir: Path, dry_run: bool) -> Optional[Path]:
+    is_generic_name = bool(re.fullmatch(cfg.generic_name_pattern, pdf_path.stem))
     tmp_ocr_path = pdf_path.with_name(f".ocr_tmp_{pdf_path.name}")
     try:
         if dry_run:
             logger.info("[dry-run] OCR: %s", pdf_path)
-            text = extract_text(pdf_path)
+            text = extract_text(pdf_path) if is_generic_name else ""
         else:
             run_ocr(pdf_path, tmp_ocr_path, cfg.ocr_language)
-            text = extract_text(tmp_ocr_path)
+            text = extract_text(tmp_ocr_path) if is_generic_name else ""
 
-        new_filename = build_new_filename(cfg, pdf_path, text)
+        if is_generic_name:
+            new_filename = build_new_filename(cfg, pdf_path, text)
+        else:
+            # 既に意味のある名前が付いているファイルは、OCRだけ適用してファイル名は維持する
+            new_filename = pdf_path.name
         dest_path = unique_destination(dest_dir, new_filename)
 
         if dry_run:
