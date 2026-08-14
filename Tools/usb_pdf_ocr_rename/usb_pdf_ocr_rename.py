@@ -131,7 +131,15 @@ def discover_source_dirs(cfg: Config, explicit_source: Optional[Path]) -> list[P
 
 
 def find_pdfs(source_dir: Path) -> list[Path]:
-    return sorted(p for p in source_dir.rglob("*") if p.is_file() and p.suffix.lower() == ".pdf")
+    return sorted(
+        p
+        for p in source_dir.rglob("*")
+        if p.is_file()
+        and p.suffix.lower() == ".pdf"
+        # "._foo.pdf" はmacOSが外部ドライブ(exFAT/NTFS等)にコピーした際に
+        # 作るAppleDouble形式のリソースフォーク管理ファイルで、実データではない
+        and not p.name.startswith("._")
+    )
 
 
 def run_ocr(input_pdf: Path, output_pdf: Path, language: str) -> None:
